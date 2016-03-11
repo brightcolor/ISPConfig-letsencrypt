@@ -115,8 +115,17 @@ if(is_file("/etc/apache2/apache2.conf")) {
 		}
 		exec("cp ./apache.letsencrypt.conf /etc/apache2/conf.d/letsencrypt.conf");
 	}
+
+	if(is_dir("/etc/apache2/sites-available")) {
+		if(is_file("/etc/apache2/sites-available/letsencryptalias.conf")) {
+			exec("rm /etc/apache2/sites-available/letsencryptalias.conf");
+		}
+		exec("cp ./letsencryptalias.conf /etc/apache2/sites-available/letsencryptalias.conf");
+	}
+	exec("mkdir /var/www/html/letsencrypt");
 	exec("a2enmod headers");
 	exec("a2enconf letsencrypt");
+	exec("a2ensite letsencryptalias.conf");
 	exec("service apache2 reload");
 }
 
@@ -137,12 +146,13 @@ if(!file_exists($backup_dir . $backup_file2 )) {
 
 exec("crontab -l", $output);
 
-if(!in_array("30 02 * * * /root/.local/share/letsencrypt/bin/letsencrypt renew >> /var/log/ispconfig/cron.log;", $output)) {
+if(!in_array("01 02 * * * /root/.local/share/letsencrypt/bin/letsencrypt renew >> /var/log/ispconfig/letsencrypt/renew.log;", $output)) {
 	echo "Add a cronjob for renewal certs\n";
 
-	$output[] = "30 02 * * * /root/.local/share/letsencrypt/bin/letsencrypt renew >> /var/log/ispconfig/cron.log;";
+	$output[] = "01 02 * * * /root/.local/share/letsencrypt/bin/letsencrypt renew >> /var/log/ispconfig/letsencrypt/renew.log;";
 
 	exec("touch ./crontab.tmp");
+	exec("touch /var/log/ispconfig/letsencrypt/renew.log");
 	if(!is_file("./crontab.tmp")) {
 		echo "ERROR: Unable to create temporary crontab file.\n";
 		exit;
